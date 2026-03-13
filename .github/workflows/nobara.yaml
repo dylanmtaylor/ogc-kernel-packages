@@ -35,6 +35,11 @@ jobs:
             options: --privileged
 
         steps:
+            - name: Prepare environment
+              run: |
+                # Lowercase the image uri
+                echo "OCI_REPO=${OCI_REPO,,}" >> ${GITHUB_ENV}
+
             - name: Maximize build space
               run: |
                   df -h
