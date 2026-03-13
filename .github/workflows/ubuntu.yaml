@@ -36,6 +36,7 @@ jobs:
 
         steps:
             - name: Prepare environment
+              shell: bash
               run: |
                 # Lowercase the image uri
                 echo "OCI_REPO=${OCI_REPO,,}" >> ${GITHUB_ENV}
