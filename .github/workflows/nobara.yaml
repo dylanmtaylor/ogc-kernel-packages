@@ -10,6 +10,9 @@ on:
         tags:
             - 'v*'
 
+env:
+    OCI_REPO: ghcr.io/${{ github.repository }}/nobara
+
 permissions:
     contents: read
     packages: write
@@ -88,7 +91,7 @@ jobs:
               id: push
               run: |
                   VERSION="${{ steps.version.outputs.version }}"
-                  REPO="ghcr.io/opengamingcollective/kernel-packages/nobara"
+                  REPO="${{ env.OCI_REPO }}"
                   TOPDIR="$(pwd)/rpmbuild"
                   mkdir -p /tmp/rpms
                   cp "$TOPDIR"/RPMS/x86_64/*.rpm /tmp/rpms/ 2>/dev/null || true
@@ -106,7 +109,7 @@ jobs:
               if: startsWith(github.ref, 'refs/tags/')
               uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4
               with:
-                  subject-name: ghcr.io/opengamingcollective/kernel-packages/nobara
+                  subject-name: ${{ env.OCI_REPO }}
                   subject-digest: ${{ steps.push.outputs.digest }}
                   push-to-registry: true
 
@@ -114,7 +117,7 @@ jobs:
               if: startsWith(github.ref, 'refs/tags/')
               run: |
                   VERSION="${{ steps.version.outputs.version }}"
-                  REPO="ghcr.io/opengamingcollective/kernel-packages/nobara"
+                  REPO="${{ env.OCI_REPO }}"
                   cosign sign --yes "${REPO}:${VERSION}"
                   cosign sign --yes "${REPO}:latest"
 
@@ -122,7 +125,7 @@ jobs:
               if: startsWith(github.ref, 'refs/tags/')
               run: |
                   VERSION="${{ steps.version.outputs.version }}"
-                  REPO="ghcr.io/opengamingcollective/kernel-packages/nobara"
+                  REPO="${{ env.OCI_REPO }}"
                   cosign verify \
                     --certificate-identity-regexp=".*" \
                     --certificate-oidc-issuer="https://token.actions.githubusercontent.com" \
