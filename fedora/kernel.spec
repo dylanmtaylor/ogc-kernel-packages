@@ -36,7 +36,7 @@ Name: kernel
 Summary: The Linux Kernel with Open Gaming Collective (OGC) patches
 
 %define _basekver 6.19
-%define _stablekver 6
+%define _stablekver 8
 %define _rcver rc7
 %if %{_stablekver} == 0
 %define _tarkver %{_basekver}
@@ -78,7 +78,7 @@ Source2: kvm_stat.logrotate
 ExcludeArch:    %{ix86}
 
 # Stable patches
-Patch0: https://github.com/OpenGamingCollective/linux/releases/download/v6.19.6-ogc1/monolithic.patch
+Patch0: https://github.com/OpenGamingCollective/linux/releases/download/v6.19.8-ogc1/monolithic.patch
 
 %define __spec_install_post /usr/lib/rpm/brp-compress || :
 %define debug_package %{nil}

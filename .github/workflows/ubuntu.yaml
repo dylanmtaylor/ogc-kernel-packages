@@ -67,16 +67,16 @@ jobs:
 
             - name: Get sources
               run: |
-                  wget https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.19.6.tar.xz
-                  wget https://github.com/OpenGamingCollective/linux/releases/download/v6.19.6-ogc1/monolithic.patch
-                  tar -xf linux-6.19.6.tar.xz
-                  cd linux-6.19.6
+                  wget https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.19.8.tar.xz
+                  wget https://github.com/OpenGamingCollective/linux/releases/download/v6.19.8-ogc1/monolithic.patch
+                  tar -xf linux-6.19.8.tar.xz
+                  cd linux-6.19.8
                   cp ../config .config
                   patch -Np1 < "../monolithic.patch"
 
             - name: Build
               run: |
-                  cd linux-6.19.6
+                  cd linux-6.19.8
                   make olddefconfig
                   fakeroot make -j$(nproc) bindeb-pkg
 
