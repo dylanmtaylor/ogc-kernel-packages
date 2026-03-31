@@ -342,6 +342,9 @@ scripts/config -u DEFAULT_HOSTNAME
 # Set kernel version string as build salt
 scripts/config --set-str BUILD_SALT "%{kverstr}"
 
+# Generate include/config/auto.conf
+make olddefconfig
+
 # Save configuration for later reuse
 cat .config > config-linux-ogc
 
