@@ -45,7 +45,8 @@ Summary: The Linux Kernel with Open Gaming Collective (OGC) patches
 Version: %{_basekver}.%{_stablekver}
 
 %define ogcver @@OGCVER@@
-Release: ogc%{ogcver}%{?dist}
+%define buildnum @@BUILDNUM@@
+Release: ogc%{ogcver}.%{buildnum}%{?dist}
 
 # Define rawhide fedora version
 %define _rawhidever 44

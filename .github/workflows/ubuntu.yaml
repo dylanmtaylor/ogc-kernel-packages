@@ -97,6 +97,20 @@ jobs:
                   echo "stable_kver=$STABLE_KVER" >> "$GITHUB_OUTPUT"
                   echo "tar_kver=$TAR_KVER" >> "$GITHUB_OUTPUT"
 
+            - name: Setup ORAS
+              uses: oras-project/setup-oras@22ce207df3b08e061f537244349aac6ae1d214f6 # v1
+
+            - name: Get build number
+              id: buildnum
+              shell: bash
+              run: |
+                  VERSION_PREFIX="${{ steps.version.outputs.ogc_version }}"
+                  REPO="${OCI_REPO,,}"
+                  EXISTING=$(oras repo tags "${REPO}" 2>/dev/null | { grep -cE "^${VERSION_PREFIX}\.[0-9]+$" || true; })
+                  BUILD_NUM=$((EXISTING + 1))
+                  echo "build_num=$BUILD_NUM" >> "$GITHUB_OUTPUT"
+                  echo "Build number: $BUILD_NUM"
+
             - name: Download and verify kernel source
               run: |
                   TAR_KVER="${{ steps.version.outputs.tar_kver }}"
@@ -138,14 +152,17 @@ jobs:
                   cd linux-${{ steps.version.outputs.tar_kver }}
                   make olddefconfig
 
+            - name: Set build version
+              shell: bash
+              run: |
+                  OGC_REV="${{ steps.version.outputs.ogc_rev }}"
+                  BUILD_NUM="${{ steps.buildnum.outputs.build_num }}"
+                  echo "-ogc${OGC_REV}.${BUILD_NUM}" > linux-${{ steps.version.outputs.tar_kver }}/localversion
+
             - name: Build
               run: |
                   cd linux-${{ steps.version.outputs.tar_kver }}
                   fakeroot make -j$(nproc) bindeb-pkg
-
-            - name: Setup ORAS
-              if: startsWith(github.ref, 'refs/tags/')
-              uses: oras-project/setup-oras@22ce207df3b08e061f537244349aac6ae1d214f6 # v1
 
             - name: Setup Cosign
               if: startsWith(github.ref, 'refs/tags/')
@@ -160,7 +177,7 @@ jobs:
               if: startsWith(github.ref, 'refs/tags/')
               id: push
               run: |
-                  VERSION="${{ steps.version.outputs.ogc_version }}"
+                  VERSION="${{ steps.version.outputs.ogc_version }}.${{ steps.buildnum.outputs.build_num }}"
                   REPO="${{ env.OCI_REPO }}"
                   cd $GITHUB_WORKSPACE
                   DIGEST=$(oras push --format json "${REPO}:${VERSION}" ./*.deb | jq -r '.digest')
@@ -174,7 +191,7 @@ jobs:
             - name: Sign artifacts
               if: startsWith(github.ref, 'refs/tags/')
               run: |
-                  VERSION="${{ steps.version.outputs.ogc_version }}"
+                  VERSION="${{ steps.version.outputs.ogc_version }}.${{ steps.buildnum.outputs.build_num }}"
                   REPO="${{ env.OCI_REPO }}"
                   cosign sign --yes "${REPO}:${VERSION}"
                   cosign sign --yes "${REPO}:latest"
@@ -190,7 +207,7 @@ jobs:
             - name: Verify signature
               if: startsWith(github.ref, 'refs/tags/')
               run: |
-                  VERSION="${{ steps.version.outputs.ogc_version }}"
+                  VERSION="${{ steps.version.outputs.ogc_version }}.${{ steps.buildnum.outputs.build_num }}"
                   REPO="${{ env.OCI_REPO }}"
                   cosign verify \
                     --certificate-identity-regexp=".*" \

@@ -90,6 +90,20 @@ jobs:
                   echo "stable_kver=$STABLE_KVER" >> "$GITHUB_OUTPUT"
                   echo "tar_kver=$TAR_KVER" >> "$GITHUB_OUTPUT"
 
+            - name: Setup ORAS
+              uses: oras-project/setup-oras@22ce207df3b08e061f537244349aac6ae1d214f6 # v1
+
+            - name: Get build number
+              id: buildnum
+              shell: bash
+              run: |
+                  VERSION_PREFIX="${{ steps.version.outputs.ogc_version }}"
+                  REPO="${OCI_REPO,,}"
+                  EXISTING=$(oras repo tags "${REPO}" 2>/dev/null | { grep -cE "^${VERSION_PREFIX}\.[0-9]+$" || true; })
+                  BUILD_NUM=$((EXISTING + 1))
+                  echo "build_num=$BUILD_NUM" >> "$GITHUB_OUTPUT"
+                  echo "Build number: $BUILD_NUM"
+
             - name: Substitute versions
               shell: bash
               run: |
@@ -97,6 +111,7 @@ jobs:
                     -e "s/@@BASEKVER@@/${{ steps.version.outputs.base_kver }}/" \
                     -e "s/@@STABLEKVER@@/${{ steps.version.outputs.stable_kver }}/" \
                     -e "s/@@OGCVER@@/${{ steps.version.outputs.ogc_rev }}/" \
+                    -e "s/@@BUILDNUM@@/${{ steps.buildnum.outputs.build_num }}/" \
                     fedora/kernel.spec
 
             - name: Dependencies
@@ -159,10 +174,6 @@ jobs:
                   cp linux-${TAR_KVER}/.config "$TOPDIR/SOURCES/config"
                   rpmbuild --define "_topdir $TOPDIR" -ba ./fedora/kernel.spec
 
-            - name: Setup ORAS
-              if: startsWith(github.ref, 'refs/tags/')
-              uses: oras-project/setup-oras@22ce207df3b08e061f537244349aac6ae1d214f6 # v1
-
             - name: Setup Cosign
               if: startsWith(github.ref, 'refs/tags/')
               uses: sigstore/cosign-installer@ba7bc0a3fef59531c69a25acd34668d6d3fe6f22 # v4.1.0
@@ -176,7 +187,7 @@ jobs:
               if: startsWith(github.ref, 'refs/tags/')
               id: push
               run: |
-                  VERSION="${{ steps.version.outputs.ogc_version }}"
+                  VERSION="${{ steps.version.outputs.ogc_version }}.${{ steps.buildnum.outputs.build_num }}"
                   REPO="${{ env.OCI_REPO }}"
                   TOPDIR="$(pwd)/rpmbuild"
                   mkdir -p /tmp/rpms
@@ -194,7 +205,7 @@ jobs:
             - name: Sign artifacts
               if: startsWith(github.ref, 'refs/tags/')
               run: |
-                  VERSION="${{ steps.version.outputs.ogc_version }}"
+                  VERSION="${{ steps.version.outputs.ogc_version }}.${{ steps.buildnum.outputs.build_num }}"
                   REPO="${{ env.OCI_REPO }}"
                   cosign sign --yes "${REPO}:${VERSION}"
                   cosign sign --yes "${REPO}:latest"
@@ -210,7 +221,7 @@ jobs:
             - name: Verify signature
               if: startsWith(github.ref, 'refs/tags/')
               run: |
-                  VERSION="${{ steps.version.outputs.ogc_version }}"
+                  VERSION="${{ steps.version.outputs.ogc_version }}.${{ steps.buildnum.outputs.build_num }}"
                   REPO="${{ env.OCI_REPO }}"
                   cosign verify \
                     --certificate-identity-regexp=".*" \

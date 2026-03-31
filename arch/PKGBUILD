@@ -2,7 +2,7 @@
 
 pkgbase=linux
 pkgver=@@OGC_VERSION@@
-pkgrel=1
+pkgrel=@@BUILDNUM@@
 pkgdesc='Linux'
 url='https://github.com/OpenGamingCollective/linux'
 arch=(x86_64)
